@@ -19,6 +19,11 @@ class ViewController: UITableViewController {
         title = "Storm Viewer"
         
         // Do any additional setup after loading the view.
+        
+        performSelector(inBackground: #selector(fetchImage), with: nil)
+    }
+    
+    @objc func fetchImage() {
         let fm = FileManager.default
         let path = Bundle.main.resourcePath!
         let items = try! fm.contentsOfDirectory(atPath: path)
@@ -29,6 +34,7 @@ class ViewController: UITableViewController {
             }
         }
         pictures.sort()
+        tableView.performSelector(onMainThread: #selector(tableView.reloadData), with: nil, waitUntilDone: false)
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
