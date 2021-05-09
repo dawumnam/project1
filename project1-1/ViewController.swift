@@ -7,10 +7,11 @@
 
 import UIKit
 
-class ViewController: UITableViewController {
+class ViewController: UICollectionViewController {
     
     var pictures = [String]()
 
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -34,26 +35,36 @@ class ViewController: UITableViewController {
             }
         }
         pictures.sort()
-        tableView.performSelector(onMainThread: #selector(tableView.reloadData), with: nil, waitUntilDone: false)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.collectionView.reloadData()
+        }
     }
     
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return pictures.count
     }
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Picture", for: indexPath)
-        cell.textLabel?.text = pictures[indexPath.row]
-        return cell
-    }
-    
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let vc = storyboard?.instantiateViewController(withIdentifier: "Detail") as? DetailViewController {
             vc.selectedImage = pictures[indexPath.row]
             navigationController?.pushViewController(vc, animated: true)
             vc.imgNum = indexPath.row
             vc.imgsTotalNum = pictures.count
         }
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Picture", for: indexPath)
+        cell.layer.borderWidth = 2
+        cell.layer.borderColor = UIColor.gray.cgColor
+        let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width:cell.frame.width, height: 128))
+        messageLabel.text = pictures[indexPath.row]
+        messageLabel.textAlignment = .center
+        cell.addSubview(messageLabel)
+        return cell
+        
     }
     
     @objc func shareTapped() {
