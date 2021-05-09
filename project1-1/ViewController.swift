@@ -10,7 +10,7 @@ import UIKit
 class ViewController: UICollectionViewController {
     
     var pictures = [String]()
-
+    var picturesViewCount = [Int]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,6 +22,8 @@ class ViewController: UICollectionViewController {
         // Do any additional setup after loading the view.
         
         performSelector(inBackground: #selector(fetchImage), with: nil)
+
+        
     }
     
     @objc func fetchImage() {
@@ -32,13 +34,20 @@ class ViewController: UICollectionViewController {
         for item in items {
             if item.hasPrefix("nssl") {
                 pictures.append(item)
+                picturesViewCount.append(0)
             }
         }
         pictures.sort()
         
+        let defaults = UserDefaults.standard
+        if let savedViewData = defaults.object(forKey: "viewCount") as? [Int]{
+            picturesViewCount = savedViewData
+        }
+        
         DispatchQueue.main.async { [weak self] in
             self?.collectionView.reloadData()
         }
+        
     }
     
     
@@ -48,10 +57,13 @@ class ViewController: UICollectionViewController {
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let vc = storyboard?.instantiateViewController(withIdentifier: "Detail") as? DetailViewController {
-            vc.selectedImage = pictures[indexPath.row]
+            vc.selectedImage = pictures[indexPath.item]
             navigationController?.pushViewController(vc, animated: true)
-            vc.imgNum = indexPath.row
+            vc.imgNum = indexPath.item
             vc.imgsTotalNum = pictures.count
+            picturesViewCount[indexPath.item] += 1
+            let defaults = UserDefaults.standard
+            defaults.set(picturesViewCount, forKey: "viewCount")
         }
     }
     
@@ -59,12 +71,18 @@ class ViewController: UICollectionViewController {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Picture", for: indexPath)
         cell.layer.borderWidth = 2
         cell.layer.borderColor = UIColor.gray.cgColor
-        let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width:cell.frame.width, height: 128))
+        let messageLabel = UILabel(frame: CGRect(x: 0, y: 0, width:cell.frame.width, height: 30))
         messageLabel.text = pictures[indexPath.row]
         messageLabel.textAlignment = .center
+        
+        let viewsCountLabel = UILabel(frame: CGRect(x: 0, y: 64, width:cell.frame.width, height: 30))
+        let count = picturesViewCount[indexPath.item]
+        viewsCountLabel.text = "Viewd \(count) times."
+        viewsCountLabel.textAlignment = .center
+
+        cell.addSubview(viewsCountLabel)
         cell.addSubview(messageLabel)
         return cell
-        
     }
     
     @objc func shareTapped() {
@@ -72,7 +90,21 @@ class ViewController: UICollectionViewController {
         vc.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
         present(vc, animated: true)
     }
-
-
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
+        for cell in self.collectionView.visibleCells {
+            for subView in cell.subviews {
+                if type(of: subView) == UILabel.self {
+                    if let label = subView as? UILabel {
+                        label.text = ""
+                    }
+                    
+                }
+            }
+        }
+        collectionView.reloadData()
+        
+    }
 }
 
